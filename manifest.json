@@ -1,9 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "MyBurger Extension",
+  "name": "myburger",
   "version": "1.0",
-  "description": "An extension for MyBurger, using vite and react",
-  "permissions": ["activeTab", "storage"],
+  "description": "Elevate your browsing experience with our intuitive Chrome extension",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "identity"
+  ],
   "action": {
     "default_popup": "index.html",
     "default_icon": {
@@ -19,5 +23,12 @@
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+  "oauth2": {
+    "client_id": "1055267845953-2ko3t2o71vo97vo50441ghuvmf6jqhks.apps.googleusercontent.com",
+    "scopes": [
+      "openid",
+      "email"
+    ]
   }
 }
