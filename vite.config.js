@@ -15,15 +15,10 @@ export default defineConfig({
         popup: "index.html",
       },
       output: {
-        assetFileNames: `assets/[name].[ext]`,
-        chunkFileNames: `[name].js`,
         entryFileNames: `[name].js`,
       },
     },
     outDir: "dist",
-    assetsDir: ".",
-    sourcemap: true,
-    emptyOutDir: true,
   },
   server: {
     cors: true,
