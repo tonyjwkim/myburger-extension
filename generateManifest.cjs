@@ -7,7 +7,10 @@ const manifest = {
   version: "1.0",
   description:
     "Elevate your browsing experience with our intuitive Chrome extension",
-  permissions: ["activeTab", "storage", "identity"],
+  background: {
+    service_worker: "background.js",
+  },
+  permissions: ["activeTab", "storage", "identity", "tabs"],
   action: {
     default_popup: "index.html",
     default_icon: {
