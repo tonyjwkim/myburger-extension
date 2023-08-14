@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     copyAssets({
-      assets: ["./icons", "./manifest.json"],
+      assets: ["./icons", "./manifest.json", "./background.js"],
     }),
   ],
   build: {
@@ -22,5 +22,6 @@ export default defineConfig({
   },
   server: {
     cors: true,
+    port: 3002,
   },
 });

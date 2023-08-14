@@ -20,10 +20,15 @@ function Login({ onLoginSuccess }) {
       const credential = GoogleAuthProvider.credential(null, token);
       const result = await auth.signInWithCredential(credential);
 
-      console.log("User signed in:", result.user);
-      onLoginSuccess(result.user);
+      const firebaseIdToken = await auth.currentUser.getIdToken(true);
+      console.log("Firebase ID token:", firebaseIdToken);
+
+      onLoginSuccess({
+        user: result.user,
+        idToken: firebaseIdToken,
+      });
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error during authentication:", error.message);
     }
   }
 

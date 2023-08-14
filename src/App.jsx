@@ -4,20 +4,27 @@ import Login from "./components/Login";
 import { auth } from "./utils/firebase";
 
 function App() {
-  const initialAuthState =
-    localStorage.getItem("authenticated") === "true" ? {} : null;
-
-  const [user, setUser] = useState(initialAuthState);
+  const [authState, setAuthState] = useState({
+    user: null,
+    idToken: null,
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        localStorage.setItem("authenticated", "true");
-        setUser(firebaseUser);
+        const firebaseIdToken = await firebaseUser.getIdToken(true);
+        setAuthState({
+          user: firebaseUser,
+          idToken: firebaseIdToken,
+        });
       } else {
-        localStorage.setItem("authenticated", "false");
-        setUser(null);
+        setAuthState({
+          user: null,
+          idToken: null,
+        });
       }
+      setIsLoading(false);
     });
 
     return () => {
@@ -25,7 +32,13 @@ function App() {
     };
   }, []);
 
-  return user ? <Features /> : <Login onLoginSuccess={setUser} />;
+  if (isLoading) return null;
+
+  return authState && authState.user ? (
+    <Features authState={authState} />
+  ) : (
+    <Login onLoginSuccess={setAuthState} />
+  );
 }
 
 export default App;

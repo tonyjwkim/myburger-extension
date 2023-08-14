@@ -1,11 +1,20 @@
 import styled from "styled-components";
 
-function Features() {
+function Features({ authState }) {
+  const openDashboard = () => {
+    if (authState && authState.idToken) {
+      chrome.runtime.sendMessage({
+        action: "openDashboard",
+        token: authState.idToken,
+      });
+    }
+  };
   return (
     <FeaturesContainer>
       <Header>Features</Header>
       <FeatureBlock>Focus Mode</FeatureBlock>
       <FeatureBlock>Visual Filters</FeatureBlock>
+      <button onClick={openDashboard}>My Archives</button>
     </FeaturesContainer>
   );
 }
