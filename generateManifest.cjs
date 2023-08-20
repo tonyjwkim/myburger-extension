@@ -9,10 +9,22 @@ const manifest = {
     "Elevate your browsing experience with our intuitive Chrome extension",
   background: {
     service_worker: "background.js",
+    type: "module",
   },
+  content_scripts: [
+    {
+      matches: ["<all_urls>"],
+      css: ["content.css"],
+      js: ["content.js"],
+      runAt: "document_end",
+    },
+  ],
   permissions: ["activeTab", "storage", "identity", "tabs"],
+  host_permissions: ["http://localhost:3000/"],
   action: {
     default_popup: "index.html",
+    default_width: 250,
+    default_height: 300,
     default_icon: {
       16: "icons/burger.png",
       48: "icons/burger.png",

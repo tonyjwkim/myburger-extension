@@ -6,8 +6,8 @@ const GlobalStyle = createGlobalStyle`
     line-height: 1.5;
     font-weight: 400;
     color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
+    color: rgba(0, 0, 0, 0.87);
+    background-color: #FFDAB9;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -15,27 +15,12 @@ const GlobalStyle = createGlobalStyle`
     -webkit-text-size-adjust: 100%;
   }
 
-  a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
-  }
-
-  a:hover {
-    color: #535bf2;
-  }
-
   body {
+    height: 250px;
+    width: 300px;
     margin: 0;
-    display: flex;
-    place-items: center;
-    min-width: 320px;
-    min-height: 100vh;
-  }
-
-  h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
+    padding: 0;
+    overflow: hidden;
   }
 
   button {
