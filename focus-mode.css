@@ -1,19 +1,17 @@
-/* Focus Mode Styles */
-body > .scaffold > :is(top-nav, navigation-rail, side-nav, footer),
-main > :not(:last-child),
-main > :last-child > navigation-tree,
-main .toc-container {
-  display: none;
-}
-
-main > :last-child {
-  margin-top: min(10vmax, 10rem);
-  margin-bottom: min(10vmax, 10rem);
-}
-
-/* Ad-Blocking Styles */
-.ad-container,
-.banner-ad,
-.sponsored-content {
+.hide-ads {
     display: none !important;
+}
+
+.center-content.ct_scroll_wrapper::after {
+    display: none !important;
+}
+
+.center-content  {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 60%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 !important;
 }

@@ -14,13 +14,28 @@ const manifest = {
   content_scripts: [
     {
       matches: ["<all_urls>"],
-      css: ["content.css"],
+      css: ["highlight-menu.css", "focus-mode.css"],
       js: ["content.js"],
       runAt: "document_end",
     },
   ],
-  permissions: ["activeTab", "storage", "identity", "tabs"],
-  host_permissions: ["http://localhost:3000/"],
+  permissions: [
+    "activeTab",
+    "storage",
+    "identity",
+    "tabs",
+    "declarativeNetRequest",
+  ],
+  host_permissions: ["<all_urls>"],
+  declarative_net_request: {
+    rule_resources: [
+      {
+        id: "rules",
+        enabled: true,
+        path: "rules.json",
+      },
+    ],
+  },
   action: {
     default_popup: "index.html",
     default_width: 250,

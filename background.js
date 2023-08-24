@@ -1,29 +1,7 @@
 console.log("background script loaded.");
 
-let currentFirebaseUid;
-let currentFirebaseIdToken;
-
-// redirect to my archives
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.action === "openDashboard") {
-    const dashboardURL = "localhost:3001";
-    chrome.tabs.create({ url: `${dashboardURL}?token=${message.token}` });
-  }
-});
-
-// fetch firebase Uid from popup
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.action === "userLoggedIn") {
-    console.log("Received userLoggedIn message with UID:", message.firebaseUid);
-    currentFirebaseUid = message.firebaseUid;
-    currentFirebaseIdToken = message.idToken;
-  }
-  console.log("current firebase uid:" + currentFirebaseUid);
-  fetchUserData();
-});
-
-// inject content script into all tabs when extension is updated
-chrome.runtime.onInstalled.addListener(function (details) {
+chrome.runtime.onInstalled.addListener((details) => {
+  // inject content script into all tabs when extension is updated
   if (details.reason == "update") {
     chrome.tabs.query({}, function (tabs) {
       for (let tab of tabs) {
@@ -37,6 +15,70 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 function isValidURL() {
   return true;
+}
+
+let currentFirebaseUid;
+let currentFirebaseIdToken;
+let focusMode = false;
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // activate/deactivate Focus Mode
+  if (request.action === "toggleFocusMode") {
+    focusMode = request.state === "on" ? true : false;
+    toggleAdBlocking(focusMode);
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const action = focusMode ? "hideCustomAds" : "showCustomAds";
+      controlNativeAdsDisplay(tabs[0].id, action);
+    });
+
+    console.log(`Ad blocking ${focusMode ? "enabled" : "disabled"}`);
+    sendResponse({
+      status: "success",
+      message: `Focus mode set to ${request.state}`,
+    });
+    return true;
+
+    // redirect to my archives
+  } else if (request.action === "openDashboard") {
+    const dashboardURL = "localhost:3001";
+    chrome.tabs.create({ url: `${dashboardURL}?token=${request.token}` });
+
+    // fetch firebase Uid from popup
+  } else if (request.action === "userLoggedIn") {
+    console.log("Received userLoggedIn message with UID:", request.firebaseUid);
+    currentFirebaseUid = request.firebaseUid;
+    currentFirebaseIdToken = request.idToken;
+    console.log("current firebase uid:" + currentFirebaseUid);
+    fetchUserData();
+    return true;
+  }
+});
+
+// activate, deactivate Ad blocker and get active Id tab
+function toggleAdBlocking(focusMode) {
+  const ruleSetIdsToEnable = focusMode ? ["rules"] : [];
+  const ruleSetIdsToDisable = focusMode ? [] : ["rules"];
+
+  chrome.declarativeNetRequest.updateEnabledRulesets(
+    {
+      enableRulesetIds: ruleSetIdsToEnable,
+      disableRulesetIds: ruleSetIdsToDisable,
+    },
+    () => {
+      console.log(`Ad blocking ${focusMode ? "enabled" : "disabled"}`);
+    },
+  );
+}
+
+function controlNativeAdsDisplay(tabId, action) {
+  chrome.tabs.sendMessage(tabId, { action: action }, () => {
+    if (chrome.runtime.lastError) {
+      console.log(`Error injecting CSS: ${chrome.runtime.lastError.message}`);
+    } else {
+      console.log(`CSS injection ${action} on tab ${tabId} completed.`);
+    }
+  });
 }
 
 chrome.tabs.onActivated.addListener(function (activeInfo) {
