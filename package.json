@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "generate:manifest": "node generateManifest.cjs",
-    "build": "rimraf dist && npm run generate:manifest && vite build",
+    "generate:rules": "node generateRules.cjs",
+    "build": "rimraf dist && npm run generate:manifest && npm run generate:rules && vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

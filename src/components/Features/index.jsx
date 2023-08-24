@@ -4,15 +4,22 @@ import styled from "styled-components";
 function Features({ authState }) {
   const [HighlightMode, setHighlightMode] = useState(false);
   const [FocusMode, setFocusMode] = useState(false);
+  const filters = [
+    "Dark Mode",
+    "Blur Mode",
+    "Low Contrast Mode",
+    "Grayscale Mode",
+    "Red-Blind Mode",
+    "Green-Blind Mode",
+    "Blue-Blind Mode",
+  ];
 
   useEffect(() => {
-    chrome.storage.sync.get("highlightMode", (data) => {
+    chrome.storage.sync.get(["highlightMode", "focusMode"], (data) => {
       setHighlightMode(data.highlightMode || false);
-    });
-    chrome.storage.sync.get("focusMode", (data) => {
       setFocusMode(data.focusMode || false);
     });
-  }, [HighlightMode]);
+  }, []);
 
   function toggleHighlightMode() {
     let newMode = !HighlightMode;
@@ -46,27 +53,21 @@ function Features({ authState }) {
     let newMode = !FocusMode;
     setFocusMode(newMode);
 
+    const focusState = newMode ? "on" : "off";
+    console.log("after clicking focusMode:", focusState);
+
     chrome.storage.sync.set({ focusMode: newMode }, function () {
       console.log("Focus mode saved as:", newMode);
     });
-
-    const focusState = newMode ? "on" : "off";
-    console.log("after clicking focusMode:", focusState);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
       console.log("Sending message to tab: ", activeTab.id);
 
-      chrome.tabs.sendMessage(
-        activeTab.id,
-        {
-          action: "toggleFocusMode",
-          state: focusState,
-        },
-        function (response) {
-          console.log(response.message);
-        },
-      );
+      chrome.runtime.sendMessage({
+        action: "toggleFocusMode",
+        state: focusState,
+      });
     });
   }
 
@@ -101,7 +102,11 @@ function Features({ authState }) {
           </ToggleHighlightButton>
         </FeatureRow>
       </FeatureBlock>
-      <FeatureBlock>Visual Filters</FeatureBlock>
+      <FeatureBlock>
+        <FeatureRow>
+          <FeatureText>Visual Filters</FeatureText>
+        </FeatureRow>
+      </FeatureBlock>
       <button onClick={openDashboard}>My Archives</button>
     </FeaturesContainer>
   );

@@ -1,16 +1,40 @@
 console.log("Content script loaded.");
+const ADSELECTORS = [
+  'div[id*="ad"]',
+  'div[id*="newsletter"]',
+  'div[id*="subrightall"]',
+  'div[id*="aside"]',
+  'div[class^="ad_"]',
+  'div[class*="side"]',
+  'div[class*="footer"]',
+  'div[class="outside_area"]',
+  'div[class*="revenue"]',
+  'div[class*="adsbygoogle"]',
+  'div[class*="promotion"]',
+  'div[class*="GoogleActive"]',
+  'ins[class*="adsbygoogle"]',
+  'aside[class*="main_aside"]',
+  'div[class~="outside_area"]',
+];
+
+const ARTICLESELECTOR = [
+  'h1[class^="headline"]', // 한국경제 제목
+  'div[class^="content"]', // 한국경제 내용
+  'div[class^="newsct_wrapper"]', // 네이버 신문 제목.내용
+  'div[class*="ct_scroll_wrapper"]', // 네이버 세로막대기
+];
 
 let isHighlightMode = false;
 let currentSelection;
 let highlightedTextContent = null;
 let lastClickedHighlight;
 
-chrome.runtime.onMessage.addListener(function (message, request, sendResponse) {
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   // get toggle status from popup and set highlightmode in storage
-  if (message.action === "toggleHighlightMode") {
-    if (message.state === "on") {
+  if (request.action === "toggleHighlightMode") {
+    if (request.state === "on") {
       isHighlightMode = true;
-    } else if (message.state === "off") {
+    } else if (request.state === "off") {
       isHighlightMode = false;
     }
 
@@ -18,8 +42,21 @@ chrome.runtime.onMessage.addListener(function (message, request, sendResponse) {
 
     sendResponse({
       status: "success",
-      message: `Highlight mode set to ${message.state}`,
+      message: `Highlight mode set to ${request.state}`,
     });
+  }
+
+  // control native Ads and center div for focus mode
+  if (request.action === "hideCustomAds") {
+    toggleAds(ADSELECTORS, "hide");
+    toggleReaderMode(ARTICLESELECTOR, "center");
+
+    sendResponse({ message: "Custom ads removed and contents centered" });
+  } else if (request.action === "showCustomAds") {
+    toggleAds(ADSELECTORS, "show");
+    toggleReaderMode(ARTICLESELECTOR, "default");
+
+    sendResponse({ message: "Custom ads will not be removed" });
   }
 
   // get userId from background.js
@@ -229,3 +266,60 @@ async function saveToServer(highlightedTextContent) {
     }
   });
 }
+
+function toggleAds(selectors, action) {
+  const combinedAdSelector = selectors.join(", ");
+  const elements = document.querySelectorAll(combinedAdSelector);
+  const iframes = document.querySelectorAll("iframe");
+
+  if (action === "hide") {
+    elements.forEach((element) => {
+      element.classList.add("hide-ads");
+    });
+
+    iframes.forEach((iframe) => {
+      iframe.remove();
+    });
+
+    chrome.storage.local.set({ adsHidden: true });
+  } else if (action === "show") {
+    elements.forEach((element) => {
+      element.classList.remove("hide-ads");
+    });
+
+    chrome.storage.local.set({ adsHidden: false });
+  }
+}
+
+function toggleReaderMode(selectors, action) {
+  const combinedArticleSelector = selectors.join(", ");
+  const elements = document.querySelectorAll(combinedArticleSelector);
+
+  if (action === "center") {
+    elements.forEach((element) => {
+      element.classList.add("center-content");
+    });
+
+    chrome.storage.local.set({ readerMode: true });
+  } else if (action === "default") {
+    elements.forEach((element) => {
+      element.classList.remove("center-content");
+    });
+
+    chrome.storage.local.set({ readerMode: false });
+  }
+}
+
+function loadState() {
+  chrome.storage.local.get(["adsHidden", "readerMode"], function (result) {
+    if (result.adsHidden) {
+      toggleAds(ADSELECTORS, "hide");
+    }
+
+    if (result.readerMode) {
+      toggleReaderMode(ARTICLESELECTOR, "center-content");
+    }
+  });
+}
+
+loadState();
