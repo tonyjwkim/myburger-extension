@@ -59,6 +59,16 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     sendResponse({ message: "Custom ads will not be removed" });
   }
 
+  // apply filter
+  if (request.action === "applyVisualFilter") {
+    selectVisualFilter(request.filter);
+
+    sendResponse({
+      status: "success",
+      message: `Visual filter set at ${request.filter}`,
+    });
+  }
+
   // get userId from background.js
   if (request.action == "setUserId") {
     chrome.storage.local.set({ userId: request.userId }, function () {
@@ -237,6 +247,10 @@ async function saveToServer(highlightedTextContent) {
 
     const userIdFromStorage = result.userId;
     const currentUrl = window.location.href;
+    const pageTitle = document.title;
+    const metaDescription = document
+      .querySelector('meta[name="description"]')
+      ?.getAttribute("content");
 
     const url = `http://localhost:3000/users/${userIdFromStorage}/contents`;
     console.log(url);
@@ -244,6 +258,8 @@ async function saveToServer(highlightedTextContent) {
       textContent: highlightedTextContent,
       userId: userIdFromStorage,
       url: currentUrl,
+      title: pageTitle,
+      description: metaDescription,
     };
 
     try {
@@ -307,6 +323,90 @@ function toggleReaderMode(selectors, action) {
     });
 
     chrome.storage.local.set({ readerMode: false });
+  }
+}
+
+// select SVG filter
+function selectVisualFilter(filter) {
+  let existingFilters = document.getElementById("svg-filters");
+  if (existingFilters) {
+    existingFilters.remove();
+  }
+
+  let svgFilters = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg",
+  );
+  svgFilters.setAttribute("class", "svg-filters");
+  svgFilters.setAttribute("id", "svg-filters");
+  svgFilters.style.display = "none";
+
+  switch (filter) {
+    case "Dark Mode":
+      svgFilters.innerHTML = `
+    <filter id="dark-mode">
+      <feComponentTransfer>
+        <feFuncR type="table" tableValues="1 0" />
+        <feFuncG type="table" tableValues="1 0" />
+        <feFuncB type="table" tableValues="1 0" />
+      </feComponentTransfer>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 1" />
+      </feComponentTransfer>
+    </filter>`;
+      document.body.style.filter = "url('#dark-mode')";
+      break;
+    case "Grayscale Mode":
+      svgFilters.innerHTML = `
+    <filter id="grayscale-mode">
+      <feColorMatrix type="saturate" values="0" />
+    </filter>`;
+      document.body.style.filter = "url('#grayscale-mode')";
+      break;
+    case "Blur Mode":
+      svgFilters.innerHTML = `
+        <filter id="blur">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>`;
+      document.body.style.filter = "url('#blur')";
+      break;
+    case "Low Contrast Mode":
+      svgFilters.innerHTML = `
+        <filter id="low-contrast">
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="0.5" />
+          </feComponentTransfer>
+        </filter>`;
+      document.body.style.filter = "url('#low-contrast')";
+      break;
+    case "Red-Blind Mode":
+      svgFilters.innerHTML = `
+        <filter id="protanopia">
+          <fecolormatrix type="matrix" values="0.567,0.433,0,0,0  0.558,0.442,0,0,0  0,0.242,0.758,0,0  0,0,0,1,0" />
+        </filter>`;
+      document.body.style.filter = "url('#protanopia')";
+      break;
+    case "Green-Blind Mode":
+      svgFilters.innerHTML = `
+        <filter id="deuteranopia">
+          <fecolormatrix type="matrix" values="0.625,0.375,0,0,0  0.7,0.3,0,0,0  0,0.3,0.7,0,0  0,0,0,1,0" />
+        </filter>`;
+      document.body.style.filter = "url('#deuteranopia')";
+      break;
+    case "Blue-Blind Mode":
+      svgFilters.innerHTML = `
+        <filter id="tritanopia">
+          <fecolormatrix type="matrix" values="0.95,0.05,0,0,0  0,0.433,0.567,0,0  0,0.475,0.525,0,0  0,0,0,1,0" />
+        </filter>`;
+      document.body.style.filter = "url('#tritanopia')";
+      break;
+    default:
+      document.body.style.filter = "none";
+      break;
+  }
+
+  if (filter !== "No Filter") {
+    document.body.appendChild(svgFilters);
   }
 }
 

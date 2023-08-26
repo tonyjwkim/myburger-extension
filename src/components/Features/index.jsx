@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import styled from "styled-components";
 
 function Features({ authState }) {
-  const [HighlightMode, setHighlightMode] = useState(false);
-  const [FocusMode, setFocusMode] = useState(false);
-  const filters = [
+  const [isHighlightModeActive, setIsHighlightModeActive] = useState(false);
+  const [isFocusModeActive, setIsFocusModeActive] = useState(false);
+  const visualFilters = [
+    "No Filter",
     "Dark Mode",
     "Blur Mode",
     "Low Contrast Mode",
@@ -16,25 +17,28 @@ function Features({ authState }) {
 
   useEffect(() => {
     chrome.storage.sync.get(["highlightMode", "focusMode"], (data) => {
-      setHighlightMode(data.highlightMode || false);
-      setFocusMode(data.focusMode || false);
+      setIsHighlightModeActive(data.highlightMode || false);
+      setIsFocusModeActive(data.focusMode || false);
     });
   }, []);
 
-  function toggleHighlightMode() {
-    let newMode = !HighlightMode;
-    setHighlightMode(newMode);
+  function handleToggleHighlightMode() {
+    const newHighlightModeState = !isHighlightModeActive;
+    setIsHighlightModeActive(newHighlightModeState);
 
-    chrome.storage.sync.set({ highlightMode: newMode }, function () {
-      console.log("Highlight mode saved as:", newMode);
-    });
+    chrome.storage.sync.set(
+      { highlightMode: newHighlightModeState },
+      function () {
+        console.log("Highlight mode saved as:", newHighlightModeState);
+      },
+    );
 
-    const highlightState = newMode ? "on" : "off";
-    console.log("after clicking highlightMode:", highlightState);
+    const highlightState = newHighlightModeState ? "on" : "off";
+    console.log("After clicking highlightMode:", highlightState);
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
-      console.log("Sending message to tab: ", activeTab.id);
+      console.log("Sending highlight mode to tab: ", activeTab.id);
 
       chrome.tabs.sendMessage(
         activeTab.id,
@@ -49,20 +53,20 @@ function Features({ authState }) {
     });
   }
 
-  function toggleFocusMode() {
-    let newMode = !FocusMode;
-    setFocusMode(newMode);
+  function handleToggleFocusMode() {
+    const newFocusModeState = !isFocusModeActive;
+    setIsFocusModeActive(newFocusModeState);
 
-    const focusState = newMode ? "on" : "off";
-    console.log("after clicking focusMode:", focusState);
+    const focusState = newFocusModeState ? "on" : "off";
+    console.log("After clicking focusMode:", focusState);
 
-    chrome.storage.sync.set({ focusMode: newMode }, function () {
-      console.log("Focus mode saved as:", newMode);
+    chrome.storage.sync.set({ focusMode: newFocusModeState }, function () {
+      console.log("Focus mode saved as:", newFocusModeState);
     });
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
-      console.log("Sending message to tab: ", activeTab.id);
+      console.log("Sending focus mode to tab: ", activeTab.id);
 
       chrome.runtime.sendMessage({
         action: "toggleFocusMode",
@@ -71,7 +75,34 @@ function Features({ authState }) {
     });
   }
 
-  function openDashboard() {
+  function VisualFilterDropdown() {
+    function handleFilterChange(event) {
+      const selectedFilter = event.target.value;
+
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const activeTab = tabs[0];
+        console.log("Sending message to tab: ", activeTab.id);
+        console.log("Selected Filter: ", selectedFilter);
+
+        chrome.tabs.sendMessage(activeTab.id, {
+          action: "applyVisualFilter",
+          filter: selectedFilter,
+        });
+      });
+    }
+
+    return (
+      <div>
+        <select onChange={handleFilterChange}>
+          {visualFilters.map((filter, index) => (
+            <option key={index}>{filter}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  function handleOpenDashboard() {
     if (authState && authState.idToken) {
       chrome.runtime.sendMessage({
         action: "openDashboard",
@@ -81,38 +112,42 @@ function Features({ authState }) {
   }
 
   return (
-    <FeaturesContainer>
-      <Header>Features</Header>
-      <FeatureBlock>
-        <FeatureRow>
-          <FeatureText>Highlight Mode</FeatureText>
-          <ToggleHighlightButton
-            onClick={toggleHighlightMode}
-            active={HighlightMode}
+    <FeaturesWrapper>
+      <FeaturesHeader>Features</FeaturesHeader>
+      <FeatureSection>
+        <FeatureItem>
+          <FeatureLabel>Highlight Mode</FeatureLabel>
+          <ToggleButton
+            onClick={handleToggleHighlightMode}
+            isActive={isHighlightModeActive}
           >
-            {HighlightMode ? "ON" : "OFF"}
-          </ToggleHighlightButton>
-        </FeatureRow>
-      </FeatureBlock>
-      <FeatureBlock>
-        <FeatureRow>
-          <FeatureText>Focus Mode</FeatureText>
-          <ToggleHighlightButton onClick={toggleFocusMode} active={FocusMode}>
-            {FocusMode ? "ON" : "OFF"}
-          </ToggleHighlightButton>
-        </FeatureRow>
-      </FeatureBlock>
-      <FeatureBlock>
-        <FeatureRow>
-          <FeatureText>Visual Filters</FeatureText>
-        </FeatureRow>
-      </FeatureBlock>
-      <button onClick={openDashboard}>My Archives</button>
-    </FeaturesContainer>
+            {isHighlightModeActive ? "ON" : "OFF"}
+          </ToggleButton>
+        </FeatureItem>
+      </FeatureSection>
+      <FeatureSection>
+        <FeatureItem>
+          <FeatureLabel>Focus Mode</FeatureLabel>
+          <ToggleButton
+            onClick={handleToggleFocusMode}
+            isActive={isFocusModeActive}
+          >
+            {isFocusModeActive ? "ON" : "OFF"}
+          </ToggleButton>
+        </FeatureItem>
+      </FeatureSection>
+      <FeatureSection>
+        <FeatureItem>
+          <FeatureLabel>Visual Filters</FeatureLabel>
+          <VisualFilterDropdown />
+        </FeatureItem>
+      </FeatureSection>
+      <button onClick={handleOpenDashboard}>My Archives</button>
+    </FeaturesWrapper>
   );
 }
 
-const FeaturesContainer = styled.div`
+const FeaturesWrapper = styled.div`
   background-color: #ffdab9;
   border-radius: 8px;
   padding: 20px;
@@ -121,32 +156,32 @@ const FeaturesContainer = styled.div`
   color: black;
 `;
 
-const Header = styled.h2`
+const FeaturesHeader = styled.h2`
   font-size: 20px;
   border-bottom: 1px solid #ddd;
   padding-bottom: 10px;
   margin-bottom: 15px;
 `;
 
-const FeatureBlock = styled.div`
+const FeatureSection = styled.div`
   margin-bottom: 15px;
   &:last-child {
     margin-bottom: 0;
   }
 `;
 
-const FeatureRow = styled.div`
+const FeatureItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
 `;
 
-const FeatureText = styled.div`
+const FeatureLabel = styled.div`
   flex: 1;
 `;
 
-const ToggleHighlightButton = styled.button`
-  background-color: ${({ active }) => (active ? "green" : "red")};
+const ToggleButton = styled.button`
+  background-color: ${({ isActive }) => (isActive ? "green" : "red")};
   color: white;
   border: none;
   padding: 5px 10px;
