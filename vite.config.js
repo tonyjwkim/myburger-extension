@@ -13,6 +13,7 @@ export default defineConfig({
         "./content.js",
         "./highlight-menu.css",
         "./focus-mode.css",
+        "./toast.css",
         "./rules.json",
       ],
     }),

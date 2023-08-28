@@ -14,7 +14,7 @@ const manifest = {
   content_scripts: [
     {
       matches: ["<all_urls>"],
-      css: ["highlight-menu.css", "focus-mode.css"],
+      css: ["highlight-menu.css", "focus-mode.css", "toast.css"],
       js: ["content.js"],
       runAt: "document_end",
     },
