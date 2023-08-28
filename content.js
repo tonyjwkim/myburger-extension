@@ -277,8 +277,10 @@ async function saveToServer(highlightedTextContent) {
 
       const responseData = await response.json();
       console.log(responseData);
+      showToast("Successfully Saved!");
     } catch (error) {
       console.error("Error:", error);
+      showToast("Failed to Save!");
     }
   });
 }
@@ -420,6 +422,25 @@ function loadState() {
       toggleReaderMode(ARTICLESELECTOR, "center-content");
     }
   });
+}
+
+function showToast(message, type) {
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.innerText = message;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "1";
+  }, 0);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 500);
+  }, 3000);
 }
 
 loadState();
