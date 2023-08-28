@@ -29,7 +29,7 @@ let currentSelection;
 let highlightedTextContent = null;
 let lastClickedHighlight;
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function (request, sendResponse) {
   // get toggle status from popup and set highlightmode in storage
   if (request.action === "toggleHighlightMode") {
     if (request.state === "on") {
@@ -90,9 +90,10 @@ document.addEventListener("mouseup", function (event) {
   if (isHighlightMode) {
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
+
     console.log("Selected Text : " + selectedText);
 
-    if (selectedText.length >= 1) {
+    if (selectedText.length >= 2) {
       currentSelection = selection;
       highlightedTextContent = selectedText;
       showContextMenu(event.clientX, event.clientY);
@@ -104,7 +105,7 @@ document.addEventListener("mouseup", function (event) {
 document.addEventListener("click", function (event) {
   lastClickedHighlight = event.target;
   console.log("last clicked:" + lastClickedHighlight);
-  if (event.target.classList.contains("highlightedText")) {
+  if (event.target.classList.contains("highlighted-text")) {
     showContextMenu(event.clientX, event.clientY, "highlighted");
   }
 });
@@ -113,7 +114,7 @@ document.addEventListener("click", function (event) {
 function showContextMenu(x, y, context = "default") {
   const contextMenu = document.createElement("div");
   document.body.appendChild(contextMenu);
-  contextMenu.classList.add("contextMenu");
+  contextMenu.classList.add("context-menu");
 
   if (context === "default") {
     contextMenu.innerHTML = `<button id="highlightText">Highlight</button>`;
@@ -147,38 +148,39 @@ function showContextMenu(x, y, context = "default") {
   }
 
   function highlightTextHandler() {
-    if (currentSelection && currentSelection.rangeCount > 0) {
-      const range = currentSelection.getRangeAt(0);
+    const range = currentSelection.getRangeAt(0);
+    const startNode = range.startContainer;
+    const endNode = range.endContainer;
+    const commonAncestor = range.commonAncestorContainer;
 
-      if (range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
-        handleNodeHighlighting(range.commonAncestorContainer, range);
-      } else {
-        const commonAncestor = range.commonAncestorContainer;
+    const treeWalker = document.createTreeWalker(
+      commonAncestor,
+      NodeFilter.SHOW_TEXT,
+    );
 
-        const treeWalker = document.createTreeWalker(
-          commonAncestor,
-          NodeFilter.SHOW_ALL,
-          {
-            acceptNode: function (node) {
-              if (range.intersectsNode(node)) {
-                return NodeFilter.FILTER_ACCEPT;
-              }
-              return NodeFilter.FILTER_SKIP;
-            },
-          },
-        );
+    let currentNode = treeWalker.currentNode;
+    let isHighlightingStarted = false;
+    const nodesToHighlight = [];
 
-        let node;
-        while ((node = treeWalker.nextNode())) {
-          console.log("TreeWalker loop start");
-          console.log("Node found:", node);
-          handleNodeHighlighting(node, range);
-          console.log("TreeWalker loop end");
-        }
+    while (currentNode) {
+      if (currentNode === startNode) {
+        isHighlightingStarted = true;
       }
 
-      closeContextMenu();
+      if (isHighlightingStarted) {
+        nodesToHighlight.push(currentNode);
+      }
+
+      if (currentNode === endNode) {
+        break;
+      }
+
+      currentNode = treeWalker.nextNode();
     }
+
+    nodesToHighlight.forEach((node) => handleNodeHighlighting(node, range));
+
+    closeContextMenu();
   }
 
   function saveHighlightHandler() {
@@ -208,31 +210,29 @@ function showContextMenu(x, y, context = "default") {
 
 // highlight nodes
 function handleNodeHighlighting(node, range) {
-  console.log("Processing node:", node);
+  const nodeRange = document.createRange();
 
-  if (node.nodeType === Node.TEXT_NODE) {
-    const textNode = node;
-    const start = node === range.startContainer ? range.startOffset : 0;
-    const end = node === range.endContainer ? range.endOffset : textNode.length;
+  let start = 0;
+  let end = node.length;
 
-    if (start < end) {
-      const preText = document.createTextNode(
-        textNode.textContent.substring(0, start),
-      );
-      const highlightedText = document.createElement("span");
-      highlightedText.classList.add("highlightedText");
-      highlightedText.textContent = textNode.textContent.substring(start, end);
-      const postText = document.createTextNode(
-        textNode.textContent.substring(end),
-      );
-
-      textNode.parentNode.insertBefore(preText, textNode);
-      textNode.parentNode.insertBefore(highlightedText, textNode);
-      textNode.parentNode.insertBefore(postText, textNode);
-
-      textNode.parentNode.removeChild(textNode);
-    }
+  if (node === range.startContainer) {
+    start = range.startOffset;
   }
+
+  if (node === range.endContainer) {
+    end = range.endOffset;
+  }
+
+  if (start === 0 && end === 0) {
+    return;
+  }
+
+  nodeRange.setStart(node, start);
+  nodeRange.setEnd(node, end);
+
+  const highlightSpan = document.createElement("span");
+  highlightSpan.className = "highlighted-text";
+  nodeRange.surroundContents(highlightSpan);
 }
 
 // use userId as params and send text to server
