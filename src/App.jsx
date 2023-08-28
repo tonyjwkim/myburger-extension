@@ -12,34 +12,44 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      if (firebaseUser) {
-        const firebaseIdToken = await firebaseUser.getIdToken(true);
-        setAuthState({
-          user: firebaseUser,
-          idToken: firebaseIdToken,
-        });
-
-        chrome.runtime.sendMessage({
-          action: "userLoggedIn",
-          firebaseUid: firebaseUser.uid,
-          idToken: firebaseIdToken,
-        });
+    chrome.storage.local.get(["authState"], (result) => {
+      if (result.authState) {
+        setAuthState(result.authState);
+        setIsLoading(false);
       } else {
-        setAuthState({
-          user: null,
-          idToken: null,
+        const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+          if (firebaseUser) {
+            const firebaseIdToken = await firebaseUser.getIdToken(true);
+            setAuthState({
+              user: firebaseUser,
+              idToken: firebaseIdToken,
+            });
+
+            chrome.storage.local.set({
+              authState: { user: firebaseUser, idToken: firebaseIdToken },
+            });
+
+            chrome.runtime.sendMessage({
+              action: "userLoggedIn",
+              firebaseUid: firebaseUser.uid,
+              idToken: firebaseIdToken,
+            });
+          } else {
+            setAuthState({
+              user: null,
+              idToken: null,
+            });
+            chrome.storage.local.remove("authState");
+          }
+          setIsLoading(false);
         });
+
+        return () => {
+          unsubscribe();
+        };
       }
-      setIsLoading(false);
     });
-
-    return () => {
-      unsubscribe();
-    };
   }, []);
-
-  if (isLoading) return <LoadingSpinner />;
 
   return (
     <AppContainer>

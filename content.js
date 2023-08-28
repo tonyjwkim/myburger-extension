@@ -277,10 +277,10 @@ async function saveToServer(highlightedTextContent) {
 
       const responseData = await response.json();
       console.log(responseData);
-      showToast("Successfully Saved!");
+      showToast("Successfully Saved!", "success");
     } catch (error) {
       console.error("Error:", error);
-      showToast("Failed to Save!");
+      showToast("Failed to Save!", "fail");
     }
   });
 }
