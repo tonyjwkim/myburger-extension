@@ -58,7 +58,7 @@ const LoginContainer = styled.div`
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f7f7f7;
+  background-color: white;
 `;
 
 const Title = styled.h2`
