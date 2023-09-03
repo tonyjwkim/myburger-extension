@@ -266,7 +266,7 @@
       "type": "block"
     },
     "condition": {
-      "urlFilter": "*://siape.veta.naver.com/*"
+      "urlFilter": "*://g.tivan.naver.com/gfa/*"
     }
   },
   {
@@ -276,7 +276,7 @@
       "type": "block"
     },
     "condition": {
-      "urlFilter": "*://ffbbs.sportschosun.com/*"
+      "urlFilter": "*://siape.veta.naver.com/*"
     }
   },
   {
@@ -286,7 +286,7 @@
       "type": "block"
     },
     "condition": {
-      "urlFilter": "*://adv.khan.co.kr/*"
+      "urlFilter": "*://ffbbs.sportschosun.com/*"
     }
   },
   {
@@ -296,7 +296,7 @@
       "type": "block"
     },
     "condition": {
-      "urlFilter": "*://ads.mncmedia.co.kr/*"
+      "urlFilter": "*://adv.khan.co.kr/*"
     }
   },
   {
@@ -306,7 +306,7 @@
       "type": "block"
     },
     "condition": {
-      "urlFilter": "*://ad.adinc.kr/*"
+      "urlFilter": "*://ads.mncmedia.co.kr/*"
     }
   },
   {
@@ -316,7 +316,7 @@
       "type": "block"
     },
     "condition": {
-      "urlFilter": "*://tr.ad.daum.net/*"
+      "urlFilter": "*://ad.adinc.kr/*"
     }
   },
   {
@@ -326,7 +326,7 @@
       "type": "block"
     },
     "condition": {
-      "urlFilter": "*://click.clickmon.co.kr"
+      "urlFilter": "*://tr.ad.daum.net/*"
     }
   },
   {
@@ -336,7 +336,7 @@
       "type": "block"
     },
     "condition": {
-      "urlFilter": "*://zicf.inven.co.kr/*"
+      "urlFilter": "*://click.clickmon.co.kr"
     }
   },
   {
@@ -346,7 +346,27 @@
       "type": "block"
     },
     "condition": {
+      "urlFilter": "*://zicf.inven.co.kr/*"
+    }
+  },
+  {
+    "id": 36,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
       "urlFilter": "*://kf.isplus.com/*"
+    }
+  },
+  {
+    "id": 37,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*://news.naver.com/aside*"
     }
   }
 ]

@@ -27,6 +27,7 @@ const urlsToBlock = [
   "*://white.contentsfeed.com/*",
   "*://ad.about.co.kr/*",
   "*://g.tivan.naver.com/*",
+  "*://g.tivan.naver.com/gfa/*",
   "*://siape.veta.naver.com/*",
   "*://ffbbs.sportschosun.com/*",
   "*://adv.khan.co.kr/*",
@@ -36,6 +37,7 @@ const urlsToBlock = [
   "*://click.clickmon.co.kr",
   "*://zicf.inven.co.kr/*",
   "*://kf.isplus.com/*",
+  "*://news.naver.com/aside*",
 ];
 
 const rules = urlsToBlock.map((url, index) => ({
