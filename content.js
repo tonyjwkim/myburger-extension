@@ -28,8 +28,9 @@ let isHighlightMode = false;
 let currentSelection;
 let highlightedTextContent = null;
 let lastClickedHighlight;
+let isTextSelected = false;
 
-chrome.runtime.onMessage.addListener(function (request, sendResponse) {
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   // get toggle status from popup and set highlightmode in storage
   if (request.action === "toggleHighlightMode") {
     if (request.state === "on") {
@@ -50,11 +51,13 @@ chrome.runtime.onMessage.addListener(function (request, sendResponse) {
   if (request.action === "hideCustomAds") {
     toggleAds(ADSELECTORS, "hide");
     toggleReaderMode(ARTICLESELECTOR, "center");
+    chrome.storage.sync.set({ focusMode: true });
 
     sendResponse({ message: "Custom ads removed and contents centered" });
   } else if (request.action === "showCustomAds") {
     toggleAds(ADSELECTORS, "show");
     toggleReaderMode(ARTICLESELECTOR, "default");
+    chrome.storage.sync.set({ focusMode: false });
 
     sendResponse({ message: "Custom ads will not be removed" });
   }
@@ -80,9 +83,15 @@ chrome.runtime.onMessage.addListener(function (request, sendResponse) {
 });
 
 // get highlightmode from storage
-chrome.storage.sync.get("isHighlightMode", function (data) {
+chrome.storage.sync.get(["isHighlightMode", "focusMode"], function (data) {
   isHighlightMode = data.isHighlightMode || false;
   console.log("isHighlightMode from storage: " + isHighlightMode);
+
+  const isFocusMode = data.focusMode || false;
+  if (isFocusMode) {
+    toggleAds(ADSELECTORS, "hide");
+    toggleReaderMode(ARTICLESELECTOR, "center");
+  }
 });
 
 // highlight new text
@@ -94,9 +103,11 @@ document.addEventListener("mouseup", function (event) {
     console.log("Selected Text : " + selectedText);
 
     if (selectedText.length >= 2) {
+      isTextSelected = true;
       currentSelection = selection;
       highlightedTextContent = selectedText;
       showContextMenu(event.clientX, event.clientY);
+      event.stopPropagation();
     }
   }
 });
@@ -105,6 +116,12 @@ document.addEventListener("mouseup", function (event) {
 document.addEventListener("click", function (event) {
   lastClickedHighlight = event.target;
   console.log("last clicked:" + lastClickedHighlight);
+
+  if (isTextSelected) {
+    isTextSelected = false;
+    return;
+  }
+
   if (event.target.classList.contains("highlighted-text")) {
     showContextMenu(event.clientX, event.clientY, "highlighted");
   }
@@ -119,10 +136,7 @@ function showContextMenu(x, y, context = "default") {
   if (context === "default") {
     contextMenu.innerHTML = `<button id="highlightText">Highlight</button>`;
   } else if (context === "highlighted") {
-    contextMenu.innerHTML = `
-        <button id="saveHighlight">Save</button>
-        <button id="removeHighlight">Remove</button>
-    `;
+    contextMenu.innerHTML = `<button id="saveHighlight">Save</button>`;
   }
 
   contextMenu.style.position = "absolute";
@@ -142,9 +156,6 @@ function showContextMenu(x, y, context = "default") {
     document
       .getElementById("saveHighlight")
       .addEventListener("click", saveHighlightHandler, { once: true });
-    // document
-    //   .getElementById("removeHighlight")
-    //   .addEventListener("click", removeHighlightHandler, { once: true });
   }
 
   function highlightTextHandler() {
@@ -197,7 +208,10 @@ function showContextMenu(x, y, context = "default") {
   }
 
   function removeContextMenu(event) {
-    if (!contextMenu.contains(event.target)) {
+    if (
+      !contextMenu.contains(event.target) &&
+      document.body.contains(contextMenu)
+    ) {
       document.body.removeChild(contextMenu);
       document.removeEventListener("click", removeContextMenu);
     }
@@ -328,7 +342,82 @@ function toggleReaderMode(selectors, action) {
   }
 }
 
-// select SVG filter
+function applyDarkModeToElements() {
+  const allElements = document.querySelectorAll("body, body *");
+  allElements.forEach((el) => {
+    const computedStyle = getComputedStyle(el);
+
+    // if backgroundColor is white, change to #121212
+    if (
+      computedStyle.backgroundColor === "rgb(255, 255, 255)" ||
+      computedStyle.backgroundColor === "rgb(102, 102, 102)" ||
+      computedStyle.backgroundColor === "rgb(248, 249, 252)" ||
+      computedStyle.backgroundColor === "rgb(239, 239, 240)"
+    ) {
+      el.style.setProperty("background", "#121212", "important");
+    }
+
+    // if text color is #1e1e23 black #303038 #222222, change to white
+    if (
+      computedStyle.color === "rgb(30, 30, 35)" ||
+      computedStyle.color === "rgb(48, 48, 56)" ||
+      computedStyle.color === "rgb(34, 34, 34)" ||
+      computedStyle.color === "rgb(0, 0, 0)" ||
+      computedStyle.color === "rgb(3, 0, 0)"
+    ) {
+      el.style.color = "#ffffff";
+    }
+  });
+
+  const style = document.createElement("style");
+  style.setAttribute("reverted", "false");
+
+  style.innerHTML = `
+    .as_gnb_mnews .Nlnb::before,
+    .Nlnb.is_fixed::before,
+    .Nlnb::after,
+    .u_cbox .u_cbox_sort::before,
+    .u_cbox .u_cbox_sort::after,
+    .office_headline .ofhe_item::before,
+    .u_ft_inner::before,
+    .rankingnews .ra_tab_item .ra_tab_a {
+      background-color: #121212 !important;
+      background: #121212 !important;
+    }
+    .ranking_list .rl_time::before, .ranking_list .rl_comment::before, .ranking_list .rl_player::before, .ranking_list .rl_visit::before, .ra_extra_area .rl_time::before, .ra_extra_area .rl_comment::before, .ra_extra_area .rl_player::before, .ra_extra_area .rl_visit::before,
+    .media_end_head_share .send_caption,
+    .media_end_head_fontsize_set::before,
+    .media_end_head_tts_run::before,
+    .media_end_head_autosummary_button::before {
+      filter: brightness(0) invert(1);
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+function revertDarkModeFromElements() {
+  // Remove styles from individual elements
+  const allElements = document.querySelectorAll("body, body *");
+  allElements.forEach((el) => {
+    const computedStyle = getComputedStyle(el);
+
+    if (computedStyle.backgroundColor === "rgb(18, 18, 18)") {
+      el.style.removeProperty("background");
+    }
+
+    if (computedStyle.color === "rgb(255, 255, 255)") {
+      el.style.removeProperty("color");
+    }
+  });
+
+  // Remove the added style element (if it exists)
+  const addedStyle = document.querySelector('style[reverted="false"]');
+  if (addedStyle) {
+    addedStyle.remove();
+  }
+}
+
 function selectVisualFilter(filter) {
   let existingFilters = document.getElementById("svg-filters");
   if (existingFilters) {
@@ -342,21 +431,15 @@ function selectVisualFilter(filter) {
   svgFilters.setAttribute("class", "svg-filters");
   svgFilters.setAttribute("id", "svg-filters");
   svgFilters.style.display = "none";
+  document.body.style.filter = "none";
 
   switch (filter) {
+    case "No Filter":
+      document.body.style.filter = null;
+      revertDarkModeFromElements();
+      break;
     case "Dark Mode":
-      svgFilters.innerHTML = `
-    <filter id="dark-mode">
-      <feComponentTransfer>
-        <feFuncR type="table" tableValues="1 0" />
-        <feFuncG type="table" tableValues="1 0" />
-        <feFuncB type="table" tableValues="1 0" />
-      </feComponentTransfer>
-      <feComponentTransfer>
-        <feFuncA type="table" tableValues="0 1" />
-      </feComponentTransfer>
-    </filter>`;
-      document.body.style.filter = "url('#dark-mode')";
+      applyDarkModeToElements();
       break;
     case "Grayscale Mode":
       svgFilters.innerHTML = `
@@ -364,13 +447,6 @@ function selectVisualFilter(filter) {
       <feColorMatrix type="saturate" values="0" />
     </filter>`;
       document.body.style.filter = "url('#grayscale-mode')";
-      break;
-    case "Blur Mode":
-      svgFilters.innerHTML = `
-        <filter id="blur">
-          <feGaussianBlur stdDeviation="5" />
-        </filter>`;
-      document.body.style.filter = "url('#blur')";
       break;
     case "Low Contrast Mode":
       svgFilters.innerHTML = `
@@ -403,7 +479,6 @@ function selectVisualFilter(filter) {
       document.body.style.filter = "url('#tritanopia')";
       break;
     default:
-      document.body.style.filter = "none";
       break;
   }
 
