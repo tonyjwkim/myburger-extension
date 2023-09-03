@@ -7,7 +7,6 @@ function Features({ authState }) {
   const visualFilters = [
     "No Filter",
     "Dark Mode",
-    "Blur Mode",
     "Low Contrast Mode",
     "Grayscale Mode",
     "Red-Blind Mode",
@@ -93,11 +92,11 @@ function Features({ authState }) {
 
     return (
       <div>
-        <select onChange={handleFilterChange}>
+        <StyledSelect onChange={handleFilterChange}>
           {visualFilters.map((filter, index) => (
             <option key={index}>{filter}</option>
           ))}
-        </select>
+        </StyledSelect>
       </div>
     );
   }
@@ -113,27 +112,31 @@ function Features({ authState }) {
 
   return (
     <FeaturesWrapper>
-      <FeaturesHeader>Features</FeaturesHeader>
+      <FeaturesHeader>myburger for Chrome</FeaturesHeader>
       <FeatureSection>
         <FeatureItem>
           <FeatureLabel>Highlight Mode</FeatureLabel>
-          <ToggleButton
-            onClick={handleToggleHighlightMode}
-            isActive={isHighlightModeActive}
-          >
-            {isHighlightModeActive ? "ON" : "OFF"}
-          </ToggleButton>
+          <ToggleSwitch>
+            <ToggleInput
+              type="checkbox"
+              checked={isHighlightModeActive}
+              onChange={handleToggleHighlightMode}
+            />
+            <ToggleSlider></ToggleSlider>
+          </ToggleSwitch>
         </FeatureItem>
       </FeatureSection>
       <FeatureSection>
         <FeatureItem>
           <FeatureLabel>Focus Mode</FeatureLabel>
-          <ToggleButton
-            onClick={handleToggleFocusMode}
-            isActive={isFocusModeActive}
-          >
-            {isFocusModeActive ? "ON" : "OFF"}
-          </ToggleButton>
+          <ToggleSwitch>
+            <ToggleInput
+              type="checkbox"
+              checked={isFocusModeActive}
+              onChange={handleToggleFocusMode}
+            />
+            <ToggleSlider></ToggleSlider>
+          </ToggleSwitch>
         </FeatureItem>
       </FeatureSection>
       <FeatureSection>
@@ -142,22 +145,23 @@ function Features({ authState }) {
           <VisualFilterDropdown />
         </FeatureItem>
       </FeatureSection>
-      <button onClick={handleOpenDashboard}>My Archives</button>
+      <StyledButton onClick={handleOpenDashboard}>
+        Go to my Archives
+      </StyledButton>
     </FeaturesWrapper>
   );
 }
 
 const FeaturesWrapper = styled.div`
-  background-color: #ffdab9;
-  border-radius: 8px;
+  background-color: white;
   padding: 20px;
   width: 250px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   color: black;
+  font-size: 15px;
 `;
 
 const FeaturesHeader = styled.h2`
-  font-size: 20px;
+  font-size: 14px;
   border-bottom: 1px solid #ddd;
   padding-bottom: 10px;
   margin-bottom: 15px;
@@ -180,12 +184,82 @@ const FeatureLabel = styled.div`
   flex: 1;
 `;
 
-const ToggleButton = styled.button`
-  background-color: ${({ isActive }) => (isActive ? "green" : "red")};
-  color: white;
-  border: none;
-  padding: 5px 10px;
+const ToggleSwitch = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+`;
+
+const ToggleSlider = styled.span`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: grey;
+  transition: 0.4s;
+  border-radius: 20px;
+  &:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+`;
+
+const ToggleInput = styled.input`
+  opacity: 0;
+  width: 0;
+  height: 0;
+  &:checked + span {
+    background-color: green;
+  }
+  &:checked + span:before {
+    transform: translateX(20px);
+  }
+`;
+
+const StyledSelect = styled.select`
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
   cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+`;
+
+const StyledButton = styled.button`
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #0056b3;
+  }
+
+  &:active {
+    background-color: #004499;
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
 `;
 
 export default Features;
