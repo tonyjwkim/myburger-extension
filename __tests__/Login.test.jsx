@@ -36,11 +36,10 @@ describe("Login Component", () => {
       return;
     }
 
-    // Your existing mock setup
     mockAuthInstance.signInWithCredential.mockResolvedValue({
-      user: { uid: "someUid" },
+      user: { uid: "userUid" },
     });
-    mockAuthInstance.currentUser.getIdToken.mockResolvedValue("someToken");
+    mockAuthInstance.currentUser.getIdToken.mockResolvedValue("userToken");
 
     render(<Login onLoginSuccess={mockOnLoginSuccess} />);
 
