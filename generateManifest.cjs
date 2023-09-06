@@ -4,9 +4,9 @@ const fs = require("fs");
 const manifest = {
   manifest_version: 3,
   name: "myburger",
-  version: "1.0",
+  version: "1.0.0",
   description:
-    "Elevate your browsing experience with our intuitive Chrome extension",
+    "enhance your reading with Highlight Mode, Focus Mode, and Visual Filters for a better browsing experience",
   background: {
     service_worker: "background.js",
     type: "module",
